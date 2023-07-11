@@ -26,6 +26,13 @@ pip install -r requirements.txt
 python account_scraper.py > ../path/to/file.json
 ```
 
+Alternatively, `pipenv` can be used:
+
+```bash
+pipenv shell
+pipenv install
+```
+
 To use the generated JSON file, run a command similar to the following from an existent Pulumi program's main directory:
 
 ```bash
