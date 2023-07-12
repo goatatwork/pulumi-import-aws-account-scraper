@@ -19,6 +19,14 @@ def generate_import_resources(
             # Assuming that a Name attribute must be unique, e.g. for an S3
             # bucket.
             name = aws_resource["Name"]
+        elif "GroupName" in aws_resource:
+            name = aws_resource["GroupName"]
+        elif "PolicyName" in aws_resource:
+            name = aws_resource["PolicyName"]
+        elif "RoleName" in aws_resource:
+            name = aws_resource["RoleName"]
+        elif "UserName" in aws_resource:
+            name = aws_resource["UserName"]
         elif "Tags" in aws_resource:
             for tag in aws_resource["Tags"]:
                 if tag["Key"] == "Name":
@@ -77,6 +85,9 @@ def get_ec2_instances():
     return instances
 
 ec2_client = boto3.client('ec2')
+s3_client = boto3.client('s3')
+iam_client = boto3.client('iam')
+
 pulumi_import = {
     "resources": []
 }
@@ -114,5 +125,35 @@ pulumi_import['resources'] += generate_import_resources(
     "aws:ec2/securityGroup:SecurityGroup",
 )
 
+pulumi_import['resources'] += generate_import_resources(
+    lambda: s3_client.list_buckets()["Buckets"],
+    lambda resource: resource["Name"],
+    "aws:s3/bucket:Bucket"
+)
 
-print(json.dumps(pulumi_import, indent=2))
+pulumi_import['resources'] += generate_import_resources(
+    lambda: iam_client.list_users()["Users"],
+    lambda resource: resource["UserName"],
+    "aws:iam/user:User"
+)
+
+pulumi_import['resources'] += generate_import_resources(
+    lambda: iam_client.list_groups()["Groups"],
+    lambda resource: resource["GroupName"],
+    "aws:iam/group:Group"
+)
+
+pulumi_import['resources'] += generate_import_resources(
+    lambda: iam_client.list_roles()["Roles"],
+    lambda resource: resource["RoleName"],
+    "aws:iam/role:Role"
+)
+
+pulumi_import['resources'] += generate_import_resources(
+    lambda: iam_client.list_policies(Scope='Local')["Policies"],
+    lambda resource: resource["PolicyName"],
+    "aws:iam/policy:Policy"
+)
+
+if __name__ == "__main__":
+    print(json.dumps(pulumi_import, indent=2))
